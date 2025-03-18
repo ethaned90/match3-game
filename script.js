@@ -1,3 +1,4 @@
+
 // Match-3 Puzzle Game (JavaScript)
 
 const canvas = document.getElementById("gameCanvas");
@@ -22,7 +23,7 @@ function initGrid() {
                 grid[r][c] = Math.floor(Math.random() * 5);
             }
         }
-    } while (checkMatches());
+    } while (findMatches().length > 0);
 }
 
 // Draw the game board
@@ -59,10 +60,11 @@ canvas.addEventListener("click", function(event) {
         let [prevRow, prevCol] = selectedTile;
         if (isAdjacent(row, col, prevRow, prevCol)) {
             swapTiles(row, col, prevRow, prevCol);
-            if (checkMatches()) {
-                score += 10;
+            let matches = findMatches();
+            if (matches.length > 0) {
+                score += matches.length * 10;
                 document.getElementById("score").innerText = score;
-                removeMatches();
+                removeMatches(matches);
             } else {
                 swapTiles(row, col, prevRow, prevCol);
             }
@@ -82,30 +84,28 @@ function isAdjacent(r1, c1, r2, c2) {
     return (Math.abs(r1 - r2) + Math.abs(c1 - c2)) === 1;
 }
 
-// Check for matches
-function checkMatches() {
+// Find matches
+function findMatches() {
     let matches = [];
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols - 2; c++) {
-            if (grid[r][c] === grid[r][c + 1] && grid[r][c] === grid[r][c + 2]) {
+            if (grid[r][c] !== null && grid[r][c] === grid[r][c + 1] && grid[r][c] === grid[r][c + 2]) {
                 matches.push([r, c], [r, c + 1], [r, c + 2]);
             }
         }
     }
     for (let c = 0; c < cols; c++) {
         for (let r = 0; r < rows - 2; r++) {
-            if (grid[r][c] === grid[r + 1][c] && grid[r][c] === grid[r + 2][c]) {
+            if (grid[r][c] !== null && grid[r][c] === grid[r + 1][c] && grid[r][c] === grid[r + 2][c]) {
                 matches.push([r, c], [r + 1, c], [r + 2, c]);
             }
         }
     }
-    return matches.length > 0;
+    return matches;
 }
 
 // Remove matches and shift tiles down
-function removeMatches() {
-    let matches = checkMatches();
-    if (!matches.length) return;
+function removeMatches(matches) {
     matches.forEach(([r, c]) => grid[r][c] = null);
     for (let c = 0; c < cols; c++) {
         let emptySpaces = 0;
@@ -122,8 +122,11 @@ function removeMatches() {
         }
     }
     setTimeout(() => {
+        let newMatches = findMatches();
+        if (newMatches.length > 0) {
+            removeMatches(newMatches);
+        }
         drawGrid();
-        removeMatches();
     }, 300);
 }
 
